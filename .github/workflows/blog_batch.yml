@@ -26,8 +26,9 @@ jobs:
           pip install requests anthropic python-dotenv
 
       - name: Create .env file
+        working-directory: blog-automation
         run: |
-          cat > blog-automation/.env << EOF
+          cat > .env << EOF
           CLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }}
           NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}
           NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}
@@ -46,4 +47,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: batch-execution-log
+          path: blog-automation/
           retention-days: 7
