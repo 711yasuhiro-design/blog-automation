@@ -2,8 +2,8 @@ name: Weekly Blog Batch Generation
 
 on:
   schedule:
-    # Every Sunday at 02:00 JST (= Saturday 17:00 UTC)
-    - cron: '0 17 * * 0'
+    # Every Saturday at 02:00 JST (= Friday 17:00 UTC)
+    - cron: '0 17 * * 5'
   # Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
