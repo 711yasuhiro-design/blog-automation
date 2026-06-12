@@ -104,16 +104,18 @@ def upload_featured_image(image_url, post_id):
 
         # Parse data URL: "data:image/png;base64,{base64_string}"
         if not image_url.startswith('data:image/'):
-            print(f'Invalid image URL format: {image_url[:50]}...')
+            print(f'  Featured image: Invalid URL format')
             return None
 
         # Extract base64 data
         parts = image_url.split(',', 1)
         if len(parts) != 2:
+            print(f'  Featured image: Invalid data URL format')
             return None
 
         base64_data = parts[1]
         image_bytes = base64.b64decode(base64_data)
+        print(f'  Featured image: Decoded {len(image_bytes)} bytes')
 
         # Upload to WordPress media library
         media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
@@ -122,6 +124,7 @@ def upload_featured_image(image_url, post_id):
             'Content-Type': 'image/png',
         }
 
+        print(f'  Featured image: Uploading to {media_url}...')
         response = requests.post(
             media_url,
             data=image_bytes,
@@ -131,22 +134,26 @@ def upload_featured_image(image_url, post_id):
         response.raise_for_status()
         media_data = response.json()
         media_id = media_data.get('id')
+        print(f'  Featured image: Uploaded, media_id={media_id}')
 
         if media_id:
             # Attach to post as featured image
             post_url = f'{WORDPRESS_URL}/wp-json/wp/v2/posts/{post_id}'
             update_payload = {'featured_media': media_id}
+            print(f'  Featured image: Attaching to post {post_id}...')
             update_response = requests.put(
                 post_url,
                 json=update_payload,
                 auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
             )
             update_response.raise_for_status()
+            print(f'  Featured image: Attached successfully')
             return media_id
 
+        print(f'  Featured image: No media_id in response')
         return None
     except Exception as e:
-        print(f'Featured image upload failed: {e}')
+        print(f'  Featured image: Error - {e}')
         return None
 
 def get_post_preview_url(post_id):
