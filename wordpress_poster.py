@@ -101,6 +101,7 @@ def upload_featured_image(image_url, post_id):
     """
     try:
         import base64
+        from datetime import datetime
 
         # Parse data URL: "data:image/png;base64,{base64_string}"
         if not image_url.startswith('data:image/'):
@@ -117,10 +118,12 @@ def upload_featured_image(image_url, post_id):
         image_bytes = base64.b64decode(base64_data)
         print(f'  Featured image: Decoded {len(image_bytes)} bytes')
 
-        # Upload to WordPress media library
+        # Upload to WordPress media library with unique filename
         media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
+        timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+        filename = f'featured-{post_id}-{timestamp}.png'
         headers = {
-            'Content-Disposition': 'attachment; filename="featured-image.png"',
+            'Content-Disposition': f'attachment; filename="{filename}"',
             'Content-Type': 'image/png',
         }
 
