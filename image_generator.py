@@ -1,10 +1,6 @@
-import requests
-from config import CANVA_API_KEY
-
-CANVA_HEADERS = {
-    'Authorization': f'Bearer {CANVA_API_KEY}',
-    'Content-Type': 'application/json',
-}
+from PIL import Image, ImageDraw, ImageFont
+import base64
+import io
 
 CATEGORY_COLORS = {
     'whisky-review': '#8B4513',
@@ -19,66 +15,102 @@ CATEGORY_COLORS = {
     'daily': '#757575',
 }
 
+def hex_to_rgb(hex_color):
+    """Convert hex color to RGB tuple."""
+    hex_color = hex_color.lstrip('#')
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
 def get_category_color(category):
     """Get category color for featured image."""
     return CATEGORY_COLORS.get(category, '#757575')
 
 def generate_featured_image(title, category, design_template_id=None):
     """
-    Generate featured image using Canva API.
+    Generate a simple featured image using Pillow.
 
-    Note: Full Canva API integration requires:
-    1. Canvaで事前に作成したテンプレートIDを指定
-    2. APIでテンプレートのテキスト要素を置き換え
-    3. 画像をエクスポート
-
-    For now, returns metadata. Full implementation requires Canva template setup.
+    Creates a 1200x630px image with category color background and title text.
+    Returns a data URL (base64 encoded PNG) for use as featured image.
     """
     try:
-        if not design_template_id:
-            # Placeholder: return color metadata
-            color = get_category_color(category)
-            return {
-                'status': 'placeholder',
-                'color': color,
-                'title': title,
-                'category': category,
-                'note': 'Canvaテンプレート未設定。Canva管理画面で手動作成推奨'
-            }
+        # Get category color
+        color_hex = get_category_color(category)
+        color_rgb = hex_to_rgb(color_hex)
 
-        # If template_id is provided, call Canva API
-        url = 'https://api.canva.com/rest/v1/designs'
-        payload = {
-            'name': title,
-            'template_id': design_template_id,
-        }
-        response = requests.post(url, json=payload, headers=CANVA_HEADERS)
-        response.raise_for_status()
-        design_data = response.json()
+        # Create image
+        img = Image.new('RGB', (1200, 630), color=color_rgb)
+        draw = ImageDraw.Draw(img)
+
+        # Use default font (available on all systems)
+        try:
+            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 48)
+        except:
+            font = ImageFont.load_default()
+
+        # Text settings
+        text_color = (255, 255, 255)  # White
+
+        # Wrap text for long titles
+        words = title.split()
+        lines = []
+        current_line = []
+
+        for word in words:
+            current_line.append(word)
+            line_text = ' '.join(current_line)
+            bbox = draw.textbbox((0, 0), line_text, font=font)
+            line_width = bbox[2] - bbox[0]
+
+            if line_width > 1000:
+                current_line.pop()
+                lines.append(' '.join(current_line))
+                current_line = [word]
+
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        # Calculate total text height
+        line_height = 60
+        total_height = len(lines) * line_height
+
+        # Draw text centered
+        y_start = (630 - total_height) // 2
+
+        for idx, line in enumerate(lines):
+            bbox = draw.textbbox((0, 0), line, font=font)
+            text_width = bbox[2] - bbox[0]
+            x = (1200 - text_width) // 2
+            y = y_start + idx * line_height
+            draw.text((x, y), line, fill=text_color, font=font)
+
+        # Convert to base64 data URL
+        buffer = io.BytesIO()
+        img.save(buffer, format='PNG')
+        img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        data_url = f'data:image/png;base64,{img_base64}'
 
         return {
             'status': 'created',
-            'design_id': design_data.get('id'),
-            'design_url': design_data.get('url'),
+            'design_url': data_url,
             'title': title,
+            'category': category,
         }
     except Exception as e:
         return {
             'status': 'error',
             'error': str(e),
             'title': title,
+            'category': category,
         }
-
-def get_placeholder_image_url(category):
-    """Return a placeholder image URL for the category."""
-    color = get_category_color(category)
-    # Using placeholder.com as fallback
-    # In production, use specific Canva templates
-    return f'https://via.placeholder.com/1200x630/{color.lstrip("#")}/FFFFFF?text=記事作成中'
 
 if __name__ == '__main__':
     result = generate_featured_image(
         title='ハイボールにおすすめのウイスキー',
         category='whisky-compare'
     )
-    print(result)
+    print(f"Status: {result.get('status')}")
+    print(f"Title: {result.get('title')}")
+    print(f"Category: {result.get('category')}")
+    if result.get('status') == 'created':
+        print(f"Image URL: {result.get('design_url')[:50]}...")
+    else:
+        print(f"Error: {result.get('error')}")

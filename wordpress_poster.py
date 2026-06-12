@@ -95,14 +95,55 @@ def slugify(text):
 
 def upload_featured_image(image_url, post_id):
     """
-    Upload featured image from URL to WordPress.
+    Upload featured image from data URL to WordPress.
 
-    For now, returns image_url as fallback.
-    Full implementation would download and upload to media library.
+    Decodes base64 data URL, uploads to media library, and attaches to post.
     """
     try:
-        # In production: download image -> upload to /wp-json/wp/v2/media -> attach to post
-        # For MVP: set featured image URL in post meta or acknowledge limitation
+        import base64
+
+        # Parse data URL: "data:image/png;base64,{base64_string}"
+        if not image_url.startswith('data:image/'):
+            print(f'Invalid image URL format: {image_url[:50]}...')
+            return None
+
+        # Extract base64 data
+        parts = image_url.split(',', 1)
+        if len(parts) != 2:
+            return None
+
+        base64_data = parts[1]
+        image_bytes = base64.b64decode(base64_data)
+
+        # Upload to WordPress media library
+        media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
+        headers = {
+            'Content-Disposition': 'attachment; filename="featured-image.png"',
+            'Content-Type': 'image/png',
+        }
+
+        response = requests.post(
+            media_url,
+            data=image_bytes,
+            headers=headers,
+            auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
+        )
+        response.raise_for_status()
+        media_data = response.json()
+        media_id = media_data.get('id')
+
+        if media_id:
+            # Attach to post as featured image
+            post_url = f'{WORDPRESS_URL}/wp-json/wp/v2/posts/{post_id}'
+            update_payload = {'featured_media': media_id}
+            update_response = requests.put(
+                post_url,
+                json=update_payload,
+                auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
+            )
+            update_response.raise_for_status()
+            return media_id
+
         return None
     except Exception as e:
         print(f'Featured image upload failed: {e}')
