@@ -119,19 +119,20 @@ def upload_featured_image(image_url, post_id):
         image_bytes = base64.b64decode(base64_data)
         print(f'  Featured image: Decoded {len(image_bytes)} bytes')
 
-        # Prepare upload using files parameter (multipart/form-data)
+        # Prepare upload with explicit Content-Disposition (proven working approach)
         media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
         timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
         filename = f'featured-{post_id}-{timestamp}.png'
-
-        files = {
-            'file': (filename, BytesIO(image_bytes), 'image/png')
+        headers = {
+            'Content-Disposition': f'attachment; filename="{filename}"',
+            'Content-Type': 'image/png',
         }
 
         print(f'  Featured image: Uploading to {media_url}...')
         response = requests.post(
             media_url,
-            files=files,
+            data=image_bytes,
+            headers=headers,
             auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
         )
 
