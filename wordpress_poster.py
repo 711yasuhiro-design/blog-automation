@@ -132,7 +132,6 @@ def upload_featured_image(image_url, post_id):
         response = requests.post(
             media_url,
             files=files,
-            headers={'Content-Disposition': f'attachment; filename="{filename}"'},
             auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
         )
 
