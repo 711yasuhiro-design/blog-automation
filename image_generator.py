@@ -20,9 +20,26 @@ def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
+def normalize_category(category):
+    """Normalize category name from Notion format to CATEGORY_COLORS key format."""
+    if not category:
+        return 'daily'
+    # Convert to lowercase and replace spaces with hyphens
+    normalized = category.lower().replace(' ', '-').replace('_', '-')
+    # Check if exact match exists
+    if normalized in CATEGORY_COLORS:
+        return normalized
+    # Check if it's a partial match (e.g., 'whisky' matches 'whisky-compare')
+    for key in CATEGORY_COLORS.keys():
+        if key.startswith(normalized) or normalized in key:
+            return key
+    # Default to daily if no match
+    return 'daily'
+
 def get_category_color(category):
     """Get category color for featured image."""
-    return CATEGORY_COLORS.get(category, '#757575')
+    normalized = normalize_category(category)
+    return CATEGORY_COLORS.get(normalized, '#757575')
 
 def generate_featured_image(title, category, design_template_id=None):
     """
