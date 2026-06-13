@@ -61,7 +61,7 @@ def build_amazon_affiliate_url(asin):
 
 def get_affiliate_prompt_addition(category):
     """
-    Get the additional prompt text for Claude to include affiliate links.
+    Get the additional prompt text for Claude to include affiliate link placeholders.
 
     Args:
         category: Category slug
@@ -79,12 +79,15 @@ def get_affiliate_prompt_addition(category):
     if program == 'amazon':
         return f"""
 
-## アフィリエイトリンク指示
+## 商品リンク挿入指示
 {instructions}
-Amazon リンク形式: <a href="https://amazon.co.jp/dp/[ASIN]?tag={AMAZON_STORE_ID}" target="_blank">[商品名]</a>
-（ASIN は Amazon 製品ページの URL に含まれています：https://amazon.co.jp/dp/[ASIN]/）
+商品を紹介する際は、以下の形式で Amazon リンク用のプレースホルダーを入れてください：
 
-例：<a href="https://amazon.co.jp/dp/B000001ABC?tag={AMAZON_STORE_ID}" target="_blank">山崎 18年</a>
+形式: <a href="[AMAZON_LINK]">[商品名]</a>
+
+例：<a href="[AMAZON_LINK]">山崎 18年</a>
+
+※ [AMAZON_LINK] の部分は記事執筆者が後から実際の Amazon アフィリエイトリンクに置換します
 """
 
     return ''
