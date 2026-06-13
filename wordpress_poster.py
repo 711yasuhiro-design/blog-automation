@@ -32,7 +32,8 @@ def create_draft_post(title, content, category, featured_image_url=None):
     auth = HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
 
     try:
-        response = requests.post(url, json=payload, auth=auth)
+        # Increase timeout for GitHub Actions (default 30 seconds)
+        response = requests.post(url, json=payload, auth=auth, timeout=60)
         response.raise_for_status()
         post_data = response.json()
 
@@ -133,7 +134,8 @@ def upload_featured_image(image_url, post_id):
             media_url,
             data=image_bytes,
             headers=headers,
-            auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
+            auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD),
+            timeout=60
         )
 
         response.raise_for_status()
@@ -151,7 +153,8 @@ def upload_featured_image(image_url, post_id):
             update_response = requests.put(
                 post_url,
                 json=update_payload,
-                auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
+                auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD),
+                timeout=60
             )
             update_response.raise_for_status()
             print(f'  Featured image: Attached successfully')
