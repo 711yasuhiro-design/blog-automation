@@ -97,11 +97,13 @@ def upload_featured_image(image_url, post_id):
     """
     Upload featured image from data URL to WordPress.
 
-    Decodes base64 data URL, uploads to media library, and attaches to post.
+    Decodes base64 data URL, saves to temp file, uploads to media library, and attaches to post.
     """
     try:
         import base64
         from datetime import datetime
+        import tempfile
+        import os
 
         # Parse data URL: "data:image/png;base64,{base64_string}"
         if not image_url.startswith('data:image/'):
@@ -118,22 +120,38 @@ def upload_featured_image(image_url, post_id):
         image_bytes = base64.b64decode(base64_data)
         print(f'  Featured image: Decoded {len(image_bytes)} bytes')
 
-        # Upload to WordPress media library with unique filename
-        media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
+        # Save to temporary file
         timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
-        filename = f'featured-{post_id}-{timestamp}.png'
-        headers = {
-            'Content-Disposition': f'attachment; filename="{filename}"',
-            'Content-Type': 'image/png',
-        }
+        temp_filename = f'featured-{post_id}-{timestamp}.png'
+        temp_dir = tempfile.gettempdir()
+        temp_path = os.path.join(temp_dir, temp_filename)
 
-        print(f'  Featured image: Uploading to {media_url}...')
-        response = requests.post(
-            media_url,
-            data=image_bytes,
-            headers=headers,
-            auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
-        )
+        with open(temp_path, 'wb') as f:
+            f.write(image_bytes)
+        print(f'  Featured image: Saved to {temp_path}')
+
+        # Upload from file
+        media_url = f'{WORDPRESS_URL}/wp-json/wp/v2/media'
+
+        with open(temp_path, 'rb') as f:
+            headers = {
+                'Content-Disposition': f'attachment; filename="{temp_filename}"',
+                'Content-Type': 'image/png',
+            }
+            print(f'  Featured image: Uploading to {media_url}...')
+            response = requests.post(
+                media_url,
+                data=f.read(),
+                headers=headers,
+                auth=HTTPBasicAuth(WORDPRESS_USERNAME, WORDPRESS_PASSWORD)
+            )
+
+        # Clean up temp file
+        try:
+            os.remove(temp_path)
+        except:
+            pass
+
         response.raise_for_status()
         media_data = response.json()
         media_id = media_data.get('id')
