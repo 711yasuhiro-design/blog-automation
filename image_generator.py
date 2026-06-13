@@ -40,11 +40,16 @@ def generate_featured_image(title, category, design_template_id=None):
         img = Image.new('RGB', (1200, 630), color=color_rgb)
         draw = ImageDraw.Draw(img)
 
-        # Use Japanese-supporting font
+        # Use Japanese-supporting font (macOS and Linux)
         font = None
         font_paths = [
+            # macOS paths
             "/System/Library/Fonts/Hiragino Sans.ttc",
             "/Library/Fonts/Hiragino Sans.ttc",
+            # Linux paths
+            "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+            "/usr/share/fonts/opentype/noto/NotoSansCJKjp-Regular.otf",
+            # Fallback
             "/System/Library/Fonts/Noto Sans CJK JP.otf",
             "/Library/Fonts/NotoSansCJKjp-Regular.otf",
         ]
