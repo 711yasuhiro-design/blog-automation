@@ -40,10 +40,22 @@ def generate_featured_image(title, category, design_template_id=None):
         img = Image.new('RGB', (1200, 630), color=color_rgb)
         draw = ImageDraw.Draw(img)
 
-        # Use default font (available on all systems)
-        try:
-            font = ImageFont.truetype("/System/Library/Fonts/Arial.ttf", 48)
-        except:
+        # Use Japanese-supporting font
+        font = None
+        font_paths = [
+            "/System/Library/Fonts/Hiragino Sans.ttc",
+            "/Library/Fonts/Hiragino Sans.ttc",
+            "/System/Library/Fonts/Noto Sans CJK JP.otf",
+            "/Library/Fonts/NotoSansCJKjp-Regular.otf",
+        ]
+        for font_path in font_paths:
+            try:
+                font = ImageFont.truetype(font_path, 48)
+                break
+            except:
+                continue
+
+        if not font:
             font = ImageFont.load_default()
 
         # Text settings
