@@ -137,7 +137,9 @@ def upload_featured_image(image_url, post_id):
         response.raise_for_status()
         media_data = response.json()
         media_id = media_data.get('id')
+        source_url = media_data.get('source_url')
         print(f'  Featured image: Uploaded, media_id={media_id}')
+        print(f'  Featured image: URL={source_url}')
 
         if media_id:
             # Attach to post as featured image
