@@ -2,6 +2,7 @@ import os
 import re
 from anthropic import Anthropic
 from config import CLAUDE_API_KEY
+from affiliate_manager import get_affiliate_prompt_addition
 
 client = Anthropic(api_key=CLAUDE_API_KEY)
 
@@ -85,6 +86,7 @@ def get_default_prompt(category):
 def generate_article(title, category, memo=''):
     """Generate an article using Claude API."""
     base_prompt = load_prompt(category)
+    affiliate_addition = get_affiliate_prompt_addition(category)
 
     user_message = f"""
 【記事のお題】
@@ -92,7 +94,7 @@ def generate_article(title, category, memo=''):
 カテゴリ: {category}
 メモ・参考情報: {memo}
 
-上記のお題で記事を書いてください。
+上記のお題で記事を書いてください。{affiliate_addition}
 """
 
     message = client.messages.create(
